@@ -5,7 +5,7 @@ import tailwind from "@astrojs/tailwind";
 import { remarkWikiLink } from "./src/lib/remark-wiki-link.mjs";
 
 export default defineConfig({
-  site: "https://astro-nano-demo.vercel.app",
+  site: "https://douglasswng.github.io",
   integrations: [mdx(), sitemap(), tailwind()],
   markdown: {
     remarkPlugins: [remarkWikiLink],
