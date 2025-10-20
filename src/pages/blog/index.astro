@@ -4,13 +4,18 @@ import PageLayout from "@layouts/PageLayout.astro";
 import Container from "@components/Container.astro";
 import ArrowCard from "@components/ArrowCard.astro";
 import { BLOG } from "@consts";
+import { extractOverview, readingTime } from "@lib/utils";
 
 const data = (await getCollection("blog"))
-  .filter(post => !post.data.draft)
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .map(post => ({
+    ...post,
+    overview: extractOverview(post.body),
+    readTime: readingTime(post.body)
+  }));
   
 type Acc = {
-  [year: string]: CollectionEntry<"blog">[];
+  [year: string]: typeof data;
 }
 
 const posts = data.reduce((acc: Acc, post) => {

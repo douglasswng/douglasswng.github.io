@@ -38,3 +38,12 @@ export function dateRange(startDate: Date, endDate?: Date | string): string {
 
   return `${startMonth}${startYear} - ${endMonth}${endYear}`;
 }
+
+export function extractOverview(markdown: string): string {
+  let overviewMatch = markdown.match(/## Overview\s*\n\s*(.+?)(?:\n\n|$)/);
+  if (overviewMatch && overviewMatch[1]) {
+    return overviewMatch[1].trim();
+  }
+  
+  return "";
+}

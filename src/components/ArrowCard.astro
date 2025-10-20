@@ -1,21 +1,51 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import { formatDate, readingTime } from "@lib/utils";
 
 type Props = {
-  entry: CollectionEntry<"blog"> | CollectionEntry<"projects">;
+  entry: (CollectionEntry<"blog"> & { overview?: string; readTime?: string }) | CollectionEntry<"projects">;
 }
 
 const { entry } = Astro.props;
+
+// Get the description/overview text
+const description = entry.collection === "blog" 
+  ? (entry as CollectionEntry<"blog"> & { overview?: string }).overview || ""
+  : entry.data.description;
+
+// Get date and read time for blog posts
+const showMeta = entry.collection === "blog";
+const date = showMeta ? formatDate(entry.data.date) : null;
+const readTime = showMeta ? (entry as CollectionEntry<"blog"> & { readTime?: string }).readTime : null;
+
+// Get topics for blog posts
+const topics = entry.collection === "blog" && entry.data.topics ? entry.data.topics : null;
 ---
 
 <a href={`/${entry.collection}/${entry.slug}`} class="relative group flex flex-nowrap py-3 px-4 pr-10 rounded-lg border border-black/15 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
-  <div class="flex flex-col flex-1 truncate">
-    <div class="font-semibold">
+  <div class="flex flex-col flex-1 min-w-0">
+    <div class="font-semibold truncate">
       {entry.data.title}
     </div>
-    <div class="text-sm">
-      {entry.data.description}
-    </div>
+    {description && (
+      <div class="text-sm line-clamp-2">
+        {description}
+      </div>
+    )}
+    {topics && topics.length > 0 && (
+      <div class="flex flex-wrap gap-1.5 mt-2">
+        {topics.map((topic: string) => (
+          <span class="px-2 py-0.5 text-xs font-medium rounded-md bg-stone-200 dark:bg-stone-700 text-black dark:text-white">
+            {topic}
+          </span>
+        ))}
+      </div>
+    )}
+    {showMeta && (
+      <div class="text-xs opacity-75 mt-1 truncate">
+        {date} · {readTime}
+      </div>
+    )}
   </div>
   <svg 
     xmlns="http://www.w3.org/2000/svg" 

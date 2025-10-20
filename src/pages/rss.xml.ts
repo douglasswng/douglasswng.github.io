@@ -1,6 +1,7 @@
 import rss from "@astrojs/rss";
 import { getCollection } from "astro:content";
 import { HOME } from "@consts";
+import { extractOverview } from "@lib/utils";
 
 type Context = {
   site: string
@@ -8,7 +9,10 @@ type Context = {
 
 export async function GET(context: Context) {
   const blog = (await getCollection("blog"))
-  .filter(post => !post.data.draft);
+    .map(post => ({
+      ...post,
+      overview: extractOverview(post.body)
+    }));
 
   const projects = (await getCollection("projects"))
     .filter(project => !project.data.draft);
@@ -22,7 +26,9 @@ export async function GET(context: Context) {
     site: context.site,
     items: items.map((item) => ({
       title: item.data.title,
-      description: item.data.description,
+      description: item.collection === "blog" 
+        ? (item as typeof blog[0]).overview || ""
+        : item.data.description,
       pubDate: item.data.date,
       link: `/${item.collection}/${item.slug}/`,
     })),
