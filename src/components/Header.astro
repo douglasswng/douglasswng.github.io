@@ -1,0 +1,93 @@
+---
+import Container from "@components/Container.astro";
+import Link from "@components/Link.astro";
+import { SITE, SOCIALS } from "@consts";
+import Github from "lucide-astro/Github";
+import Linkedin from "lucide-astro/Linkedin";
+import Mail from "lucide-astro/Mail";
+
+const socialLinks = [
+  ...SOCIALS,
+  { NAME: "email", HREF: `mailto:${SITE.EMAIL}` }
+];
+
+const iconMap = {
+  github: Github,
+  linkedin: Linkedin,
+  email: Mail
+} as const;
+---
+
+<header>
+  <Container>
+    <div class="flex flex-wrap gap-y-2 justify-between items-center">
+      <div class="flex items-center gap-2">
+        <Link href="/" underline={false}>
+          <div class="font-semibold">
+            {SITE.NAME}
+          </div>
+        </Link>
+        <button
+          id="theme-toggle-button"
+          aria-label="Toggle theme"
+          class="group relative size-8 flex items-center justify-center rounded-full"
+        >
+          <svg
+            data-theme-icon="sun"
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="absolute group-hover:stroke-black group-hover:dark:stroke-white transition-colors duration-300 ease-in-out"
+          >
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg
+            data-theme-icon="moon"
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="absolute hidden group-hover:stroke-black group-hover:dark:stroke-white transition-colors duration-300 ease-in-out"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="flex items-center gap-2">
+        {socialLinks.map(SOCIAL => {
+          const Icon = iconMap[SOCIAL.NAME as keyof typeof iconMap];
+          return Icon ? (
+            <Link
+              href={SOCIAL.HREF}
+              external={SOCIAL.NAME !== "email"}
+              aria-label={`${SITE.NAME} on ${SOCIAL.NAME}`}
+              underline={false}
+              class="flex items-center justify-center rounded-full p-2 hover:bg-black/5 hover:dark:bg-white/10 transition-colors"
+            >
+              <Icon class="size-4" />
+            </Link>
+          ) : null;
+        })}
+      </div>
+    </div>
+  </Container>
+</header>

@@ -1,0 +1,40 @@
+---
+import { getCollection } from "astro:content";
+import Container from "@components/Container.astro";
+import PageLayout from "@layouts/PageLayout.astro";
+import ArrowCard from "@components/ArrowCard.astro";
+import { extractOverview, readingTime } from "@lib/utils";
+import { HOME, SITE } from "@consts";
+
+const blog = (await getCollection("blog"))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0,SITE.NUM_POSTS_ON_HOMEPAGE)
+  .map(post => ({
+    ...post,
+    overview: extractOverview(post.body),
+    readTime: readingTime(post.body)
+  }));
+
+---
+
+<PageLayout title={HOME.TITLE} description={HOME.DESCRIPTION}>
+  <Container>
+    <h4 class="animate font-semibold text-black dark:text-white">
+      Hi, I'm Doug <span class="text-xl">👋🏻</span> 
+    </h4>
+    <section class="space-y-6 mt-6 animate">
+      <article class="space-y-4">
+        <p>
+          This blog serves as a collection of my personal study notes, toy experiments, and the 'aha!' moments I encounter along the way. Please reach out if you have questions, feedback, or just want to connect.
+        </p>
+      </article>
+      <ul class="flex flex-col gap-4">
+        {blog.map(post => (
+          <li>
+            <ArrowCard entry={post} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  </Container>
+</PageLayout>

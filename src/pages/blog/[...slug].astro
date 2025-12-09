@@ -1,0 +1,74 @@
+---
+import { type CollectionEntry, getCollection } from "astro:content";
+import PageLayout from "@layouts/PageLayout.astro";
+import Container from "@components/Container.astro";
+import FormattedDate from "@components/FormattedDate.astro";
+import { readingTime, extractOverview } from "@lib/utils";
+
+export async function getStaticPaths() {
+  const posts = (await getCollection("blog"))
+    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: post,
+  }));
+}
+type Props = CollectionEntry<"blog">;
+
+const post = Astro.props;
+const { Content, headings } = await post.render();
+const overview = extractOverview(post.body);
+---
+
+<PageLayout title={post.data.title} description={overview}>
+  <Container>
+    <div class="space-y-8">
+      <div class="animate space-y-3">
+        <div class="flex items-center gap-1.5">
+          <div class="font-base text-sm">
+            <FormattedDate date={post.data.date} />
+          </div>
+          &bull;
+          <div class="font-base text-sm">
+            {readingTime(post.body)}
+          </div>
+        </div>
+        <div class="text-4xl font-semibold text-black dark:text-white">
+          {post.data.title}
+        </div>
+        {post.data.topics && post.data.topics.length > 0 && (
+          <div class="flex flex-wrap items-center gap-2">
+            {post.data.topics.map((topic: string) => (
+              <span class="px-2 py-1 text-xs font-medium rounded-md bg-stone-200 dark:bg-stone-700 text-black dark:text-white">
+                {topic}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      {headings.length > 0 && (
+        <details class="animate p-3 bg-stone-200/50 dark:bg-stone-800/50 rounded-lg group">
+          <summary class="text-sm font-semibold text-black dark:text-white cursor-pointer list-none flex items-center gap-1.5">
+            <span class="transition-transform duration-200 group-open:rotate-90 text-xs">▶</span>
+            Table of Contents
+          </summary>
+          <ul class="space-y-1 mt-2 list-disc list-inside">
+            {headings.map((heading) => (
+              <li style={`margin-left: ${(heading.depth - 2) * 1}rem`}>
+                <a 
+                  href={`#${heading.slug}`}
+                  class="text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors duration-200 text-xs"
+                >
+                  {heading.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+      <article class="animate">
+        <Content />
+      </article>
+    </div>
+  </Container>
+</PageLayout>
