@@ -2,7 +2,7 @@ import { visit } from 'unist-util-visit';
 
 /**
  * Remark plugin to transform Obsidian-style wiki links [[Page]] to markdown links
- * Converts [[NoteStar]] to [NoteStar](/blog/notestar)
+ * Converts [[NoteStar]] to [NoteStar](/notestar)
  */
 export function remarkWikiLink() {
   return (tree) => {
@@ -39,7 +39,7 @@ export function remarkWikiLink() {
         
         newNodes.push({
           type: 'link',
-          url: `/blog/${slug}`,
+          url: `/${slug}`,
           children: [
             {
               type: 'text',
