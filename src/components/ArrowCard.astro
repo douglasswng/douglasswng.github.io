@@ -15,7 +15,7 @@ const readTime = entry.readTime || null;
 const meta = [date, readTime].filter(Boolean).join(" · ");
 ---
 
-<a href={`/${entry.slug}`} class="relative group flex flex-nowrap py-3 px-4 pr-10 rounded-lg border border-black/15 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
+<a href={`/${entry.slug}`} class="relative group flex flex-nowrap py-3 px-4 pr-10 rounded-lg border border-black/15 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/5 hover:text-stone-900 dark:hover:text-stone-100 transition-colors duration-300 ease-in-out">
   <div class="flex flex-col flex-1 min-w-0">
     <div class="font-semibold truncate">
       {entry.data.title}
@@ -28,7 +28,7 @@ const meta = [date, readTime].filter(Boolean).join(" · ");
     {topics && topics.length > 0 && (
       <div class="flex flex-wrap gap-1.5 mt-2">
         {topics.map((topic: string) => (
-          <span class="px-2 py-0.5 text-xs font-medium rounded-md bg-stone-200 dark:bg-stone-700 text-black dark:text-white">
+          <span class="px-2 py-0.5 text-xs font-medium rounded-md bg-stone-200 dark:bg-stone-700 text-stone-900 dark:text-stone-100">
             {topic}
           </span>
         ))}
