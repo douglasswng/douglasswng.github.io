@@ -43,6 +43,10 @@ article {
   @apply prose-headings:text-stone-900 prose-headings:dark:text-stone-100;
 }
 
+article img {
+  @apply bg-white rounded-lg p-4;
+}
+
 article blockquote {
   font-style: normal;
   @apply text-black/80 dark:text-white/85;

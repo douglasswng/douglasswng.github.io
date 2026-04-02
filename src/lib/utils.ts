@@ -38,7 +38,7 @@ export function dateRange(startDate: Date, endDate?: Date | string): string {
   return `${startMonth}${startYear} - ${endMonth}${endYear}`;
 }
 
-export function extractOverview(markdown: string, maxChars: number = 200): string {
+export function extractOverview(markdown: string, maxChars: number = 400): string {
   // First, try to find an explicit Overview section
   let overviewMatch = markdown.match(/## Overview\s*\n\s*(.+?)(?:\n\n|$)/);
   if (overviewMatch && overviewMatch[1]) {
@@ -51,6 +51,7 @@ export function extractOverview(markdown: string, maxChars: number = 200): strin
   
   // Remove markdown formatting
   content = content
+    .replace(/^import\s+.*$/gm, '') // Remove MDX imports
     .replace(/#{1,6}\s+/g, '') // Remove headers
     .replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold
     .replace(/\*(.+?)\*/g, '$1') // Remove italic
