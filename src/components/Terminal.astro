@@ -1,0 +1,66 @@
+---
+type Props = { title: string; class?: string };
+const { title, class: className } = Astro.props;
+---
+
+<div class:list={["terminal", className]}>
+  <div class="terminal-titlebar">
+    <span class="terminal-dot terminal-dot-r"></span>
+    <span class="terminal-dot terminal-dot-y"></span>
+    <span class="terminal-dot terminal-dot-g"></span>
+    <span class="terminal-title">{title}</span>
+  </div>
+  <div class="terminal-body">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .terminal {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .terminal-titlebar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #2a2a2a;
+    border-bottom: 1px solid #333;
+  }
+  .terminal-dot {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 9999px;
+    display: inline-block;
+  }
+  .terminal-dot-r { background: #ff5f57; }
+  .terminal-dot-y { background: #febc2e; }
+  .terminal-dot-g { background: #28c840; }
+  .terminal-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem;
+    color: #888;
+    pointer-events: none;
+  }
+  .terminal-body {
+    padding: 1rem 1.25rem 1.25rem;
+  }
+
+  :global(.terminal-prompt) {
+    color: #28c840;
+  }
+  @keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  :global(.blink) {
+    animation: blink 1s steps(1) infinite;
+  }
+</style>

@@ -3,8 +3,12 @@ import { getCollection } from "astro:content";
 import Container from "@components/Container.astro";
 import PageLayout from "@layouts/PageLayout.astro";
 import ArrowCard from "@components/ArrowCard.astro";
+import PixelRobot from "@components/PixelRobot.astro";
+import Terminal from "@components/Terminal.astro";
 import { extractOverview, readingTime } from "@lib/utils";
 import { HOME, SITE } from "@consts";
+
+const INTRO = "This blog serves as a collection of my personal study notes, toy experiments, and the 'aha!' moments I encounter along the way. Please reach out if you have questions, feedback, or just want to connect.";
 
 const blog = (await getCollection("blog"))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
@@ -19,22 +23,149 @@ const blog = (await getCollection("blog"))
 
 <PageLayout title={HOME.TITLE} description={HOME.DESCRIPTION}>
   <Container>
-    <h4 class="animate font-semibold text-stone-900 dark:text-stone-100">
-      Hi, I'm Doug <span class="text-xl">👋🏻</span> 
-    </h4>
-    <section class="space-y-6 mt-6 animate">
-      <article class="space-y-4">
-        <p>
-          This blog serves as a collection of my personal study notes, toy experiments, and the 'aha!' moments I encounter along the way. Please reach out if you have questions, feedback, or just want to connect.
+    <div class="terminal-row animate">
+      <Terminal title="~/doug — zsh" class="home-terminal-main">
+        <pre class="text-[0.45rem] sm:text-[0.7rem] leading-tight font-mono text-stone-100 overflow-x-auto select-none" role="img" aria-label="Doug Wang"><span>{String.raw`
+██████╗   ██████╗  ██╗   ██╗  ██████╗
+██╔══██╗ ██╔═══██╗ ██║   ██║ ██╔════╝
+██║  ██║ ██║   ██║ ██║   ██║ ██║  ███╗
+██║  ██║ ██║   ██║ ██║   ██║ ██║   ██║
+██████╔╝ ╚██████╔╝ ╚██████╔╝ ╚██████╔╝
+╚═════╝   ╚═════╝   ╚═════╝   ╚═════╝`}</span></pre>
+        <p id="intro-typewriter" class="mt-4 font-mono text-sm text-stone-100 grid" data-text={INTRO}>
+          <span class="[grid-area:1/1] invisible" aria-hidden="true">{INTRO}<span class="inline-block w-[1ch]"></span></span>
+          <span class="[grid-area:1/1]"><span class="tw-text"></span><span class="tw-caret blink inline-block w-[1ch]">_</span></span>
         </p>
-      </article>
+        <p id="intro-readyline" class="mt-2 font-mono text-sm text-stone-100 invisible">
+          <span class="terminal-prompt">%</span> <span id="intro-secret"></span><span id="intro-spinner"></span><span id="intro-cursor" class="blink hidden">_</span>
+        </p>
+      </Terminal>
+      <Terminal title="~/doug — ./robot" class="home-terminal-robot">
+        <p class="font-mono text-sm text-stone-100 mb-2">
+          <span class="terminal-prompt">%</span> ./robot
+        </p>
+        <PixelRobot />
+      </Terminal>
+    </div>
+    <section class="mt-4">
       <ul class="flex flex-col gap-4">
         {blog.map(post => (
-          <li>
+          <li class="animate">
             <ArrowCard entry={post} />
           </li>
         ))}
       </ul>
     </section>
   </Container>
+  <style>
+    .terminal-row {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    :global(.home-terminal-robot) {
+      display: none;
+    }
+    @media (min-width: 768px) {
+      .terminal-row {
+        flex-direction: row;
+        align-items: stretch;
+      }
+      :global(.home-terminal-main) { flex: 2; min-width: 0; }
+      :global(.home-terminal-robot) { flex: 1; min-width: 0; display: block; }
+    }
+  </style>
+  <script>
+    document.addEventListener("astro:page-load", () => {
+      const el = document.getElementById("intro-typewriter");
+      if (!el) return;
+      const text = el.dataset.text || "";
+      let i = 0;
+      const tick = () => {
+        const p = document.getElementById("intro-typewriter");
+        const textEl = p?.querySelector(".tw-text");
+        if (!textEl) return;
+        textEl.textContent = text.slice(0, ++i);
+        if (i < text.length) setTimeout(tick, 15);
+        else {
+          p?.querySelector(".tw-caret")?.remove();
+          document.getElementById("intro-readyline")?.classList.remove("invisible");
+          startTinkering();
+          document.addEventListener("keydown", onKey);
+        }
+      };
+      setTimeout(tick, 300);
+
+      const tinkerFrames = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"];
+      let tinkerId: ReturnType<typeof setInterval> | null = null;
+      const startTinkering = () => {
+        const sp = document.getElementById("intro-spinner");
+        if (!sp || tinkerId) return;
+        let f = 0;
+        const draw = () => { sp.innerHTML = `<span class="text-cyan-300">${tinkerFrames[f++ % tinkerFrames.length]}</span> Tinkering`; };
+        draw();
+        tinkerId = setInterval(draw, 80);
+      };
+      const stopTinkering = () => {
+        if (tinkerId) { clearInterval(tinkerId); tinkerId = null; }
+        const sp = document.getElementById("intro-spinner");
+        if (sp) sp.textContent = "";
+      };
+
+      const KEYWORD = "xiaobinger";
+      const REVEAL = "Found you ♥";
+      let buf = "";
+      let unlocked = false;
+      const onKey = (e: KeyboardEvent) => {
+        if (unlocked) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key.length !== 1) return;
+        const active = document.activeElement as HTMLElement | null;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        buf = (buf + e.key.toLowerCase()).slice(-KEYWORD.length);
+        if (buf !== KEYWORD) return;
+        unlocked = true;
+        document.removeEventListener("keydown", onKey);
+
+        const out = document.getElementById("intro-secret");
+        const cursor = document.getElementById("intro-cursor");
+        if (!out) return;
+        stopTinkering();
+        if (cursor) cursor.classList.add("hidden");
+        const spinnerFrames = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"];
+        let f = 0;
+        const spin = () => { out.innerHTML = `<span class="text-cyan-300">${spinnerFrames[f++ % spinnerFrames.length]}</span> Rescuing Chelsea`; };
+        spin();
+        const id = setInterval(spin, 80);
+        setTimeout(() => {
+          clearInterval(id);
+          out.textContent = "";
+          if (cursor) cursor.classList.remove("hidden");
+          const heartIdx = REVEAL.indexOf("♥");
+          let j = 0;
+          let heartSpan: HTMLSpanElement | null = null;
+          const typeReveal = () => {
+            j++;
+            if (j <= heartIdx) {
+              out.textContent = REVEAL.slice(0, j);
+            } else {
+              if (!heartSpan) {
+                out.textContent = REVEAL.slice(0, heartIdx);
+                heartSpan = document.createElement("span");
+                heartSpan.style.color = "#ff6b6b";
+                out.appendChild(heartSpan);
+              }
+              heartSpan.textContent = REVEAL.slice(heartIdx, j);
+            }
+            if (j < REVEAL.length) setTimeout(typeReveal, 30);
+          };
+          typeReveal();
+        }, 1500);
+      };
+      document.addEventListener("astro:before-preparation", () => {
+        document.removeEventListener("keydown", onKey);
+        stopTinkering();
+      }, { once: true });
+    });
+  </script>
 </PageLayout>

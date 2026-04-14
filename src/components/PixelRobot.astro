@@ -1,0 +1,380 @@
+---
+// Vanilla port of yusenthebot's PixelAvatar.
+// Kept: idle state, blink, mouse-driven parallax + head tilt, proximity eye glow,
+// proximity scan line, Bayer dithering, click glitch.
+// Dropped: terminal-driven states (typing/error/success/scan), creep posture,
+// speech bubble, status HUD.
+---
+
+<div class="pixel-robot animate">
+  <canvas id="pixel-robot-canvas" width="1000" height="800"></canvas>
+</div>
+
+<style>
+  .pixel-robot {
+    width: 100%;
+    margin: 0;
+    aspect-ratio: 1000 / 800;
+    background: #050505;
+    cursor: pointer;
+  }
+  .pixel-robot canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+  }
+</style>
+
+<script is:inline>
+  document.addEventListener('astro:page-load', () => {
+    const canvas = document.getElementById('pixel-robot-canvas');
+    if (!canvas || canvas.dataset.booted) return;
+    if (!matchMedia('(min-width: 768px)').matches) return;
+    canvas.dataset.booted = '1';
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    // Logical draw space (all coords stay in this coord system).
+    const LW = 1000, LH = 800;
+    // Buffer size = actual device pixels the canvas occupies, so rendering is 1:1.
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const BW = Math.max(1, Math.round(rect.width * dpr));
+    const BH = Math.max(1, Math.round(rect.height * dpr));
+    canvas.width = BW; canvas.height = BH;
+    const off = document.createElement('canvas');
+    off.width = BW; off.height = BH;
+    const o = off.getContext('2d', { willReadFrequently: true });
+    const sx = BW / LW, sy = BH / LH;
+
+    let frame = 0;
+    let targetMX = 0, targetMY = 0, smoothMX = 0, smoothMY = 0;
+    let proximity = 0;
+    let glitch = 0;
+
+    canvas.addEventListener('click', () => { glitch = 1; });
+
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const onMove = (e) => {
+      const r = canvas.getBoundingClientRect();
+      const headX = r.left + r.width / 2;
+      const headY = r.top + r.height * 0.4;
+      targetMX = clamp((e.clientX - headX) / (window.innerWidth / 2), -1, 1);
+      targetMY = clamp((e.clientY - headY) / (window.innerHeight / 2), -1, 1);
+      const cx = (e.clientX - r.left) / r.width;
+      const cy = (e.clientY - r.top) / r.height;
+      const dx = cx - 0.5, dy = cy - 0.4;
+      proximity = Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) * 2.5);
+    };
+    window.addEventListener('mousemove', onMove);
+
+    const bayer = [
+      [0,48,12,60,3,51,15,63],[32,16,44,28,35,19,47,31],
+      [8,56,4,52,11,59,7,55],[40,24,36,20,43,27,39,23],
+      [2,50,14,62,1,49,13,61],[34,18,46,30,33,17,45,29],
+      [10,58,6,54,9,57,5,53],[42,26,38,22,41,25,37,21]
+    ];
+
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let raf = 0;
+    let visible = true;
+    const render = () => {
+      frame++;
+      smoothMX += (targetMX - smoothMX) * 0.08;
+      smoothMY += (targetMY - smoothMY) * 0.08;
+      const mx = smoothMX, my = smoothMY;
+
+      o.setTransform(sx, 0, 0, sy, 0, 0);
+      o.fillStyle = 'rgb(10,10,10)';
+      o.fillRect(0, 0, LW, LH);
+
+      const nX = mx*12, nY = my*6;
+      const aX = mx*28, aY = my*14;
+      const earX = mx*35, earY = my*20;
+      const hX = mx*65, hY = my*35;
+      const vX = mx*50, vY = my*28;
+      const oX = mx*18, oY = my*12;
+      const refX = mx*-35, refY = my*-20;
+
+      // Body armor
+      const armor = o.createLinearGradient(200+aX, 500+aY, 800+aX, 800+aY);
+      armor.addColorStop(0, 'rgb(255,255,255)');
+      armor.addColorStop(0.3, 'rgb(140,150,160)');
+      armor.addColorStop(0.8, 'rgb(20,25,30)');
+      armor.addColorStop(1, 'rgb(60,65,70)');
+      o.fillStyle = armor;
+      o.beginPath();
+      o.moveTo(150-aX, 800);
+      o.quadraticCurveTo(300+aX*0.5, 550+aY, 500+aX, 560+aY);
+      o.quadraticCurveTo(700+aX*0.5, 550+aY, 850-aX, 800);
+      o.fill();
+
+      o.fillStyle = 'rgb(20,22,25)';
+      o.beginPath();
+      o.moveTo(380+aX, 800);
+      o.lineTo(420+aX, 600+aY);
+      o.lineTo(580+aX, 600+aY);
+      o.lineTo(620+aX, 800);
+      o.fill();
+
+      o.strokeStyle = 'rgba(0,0,0,0.6)';
+      o.lineWidth = 5;
+      o.beginPath(); o.moveTo(250+aX, 700+aY); o.lineTo(400+aX, 650+aY); o.stroke();
+      o.beginPath(); o.moveTo(750+aX, 700+aY); o.lineTo(600+aX, 650+aY); o.stroke();
+
+      // Neck
+      const neck = o.createLinearGradient(420+nX, 0, 580+nX, 0);
+      neck.addColorStop(0, 'rgb(5,5,5)');
+      neck.addColorStop(0.3, 'rgb(40,40,45)');
+      neck.addColorStop(0.7, 'rgb(100,105,110)');
+      neck.addColorStop(1, 'rgb(5,5,5)');
+      o.fillStyle = neck;
+      o.fillRect(420+nX, 450+nY, 160, 160);
+
+      const piston = o.createLinearGradient(390+nX, 0, 415+nX, 0);
+      piston.addColorStop(0, 'rgb(20,20,20)');
+      piston.addColorStop(0.5, 'rgb(200,200,200)');
+      piston.addColorStop(1, 'rgb(10,10,10)');
+      o.fillStyle = piston;
+      o.fillRect(390+nX, 480+nY, 25, 120);
+      o.fillRect(585+nX, 480+nY, 25, 120);
+
+      o.fillStyle = 'rgba(0,0,0,0.8)';
+      for (let i = 0; i < 8; i++) o.fillRect(420+nX, 460+nY+i*18, 160, 8);
+
+      // Head dome with tilt
+      o.save();
+      const hcx = 500+hX, hcy = 300+hY;
+      o.translate(hcx, hcy);
+      o.rotate(mx * 0.04);
+      o.translate(-hcx, -hcy);
+
+      const lx = 450+hX - mx*40;
+      const ly = 200+hY - my*40;
+      const head = o.createRadialGradient(lx, ly, 20, 500+hX, 300+hY, 450);
+      head.addColorStop(0, 'rgb(255,255,255)');
+      head.addColorStop(0.2, 'rgb(200,210,220)');
+      head.addColorStop(0.6, 'rgb(80,85,90)');
+      head.addColorStop(0.9, 'rgb(15,18,20)');
+      head.addColorStop(1, 'rgb(45,50,55)');
+      o.fillStyle = head;
+      o.beginPath();
+      o.moveTo(500+hX, 100+hY);
+      o.bezierCurveTo(700+hX, 100+hY, 740+hX, 300+hY, 680+hX, 480+hY);
+      o.quadraticCurveTo(500+hX, 540+hY, 320+hX, 480+hY);
+      o.bezierCurveTo(260+hX, 300+hY, 300+hX, 100+hY, 500+hX, 100+hY);
+      o.fill();
+
+      // Ears
+      const ear = o.createLinearGradient(0, 200, 0, 400);
+      ear.addColorStop(0, 'rgb(200,200,200)');
+      ear.addColorStop(1, 'rgb(10,10,10)');
+      o.fillStyle = ear;
+      o.beginPath(); o.arc(300+earX, 350+earY, 40, 0, Math.PI*2); o.fill();
+      o.beginPath(); o.arc(700+earX, 350+earY, 40, 0, Math.PI*2); o.fill();
+      o.fillStyle = 'rgb(5,5,5)';
+      o.beginPath(); o.arc(300+earX, 350+earY, 15, 0, Math.PI*2); o.fill();
+      o.beginPath(); o.arc(700+earX, 350+earY, 15, 0, Math.PI*2); o.fill();
+
+      // Visor rim
+      const rim = o.createLinearGradient(400+hX, 150+hY, 600+hX, 450+hY);
+      rim.addColorStop(0, 'rgb(80,85,90)');
+      rim.addColorStop(1, 'rgb(5,5,5)');
+      o.fillStyle = rim;
+      o.beginPath();
+      o.moveTo(500+hX, 170+hY);
+      o.quadraticCurveTo(660+hX, 200+hY, 640+hX, 390+hY);
+      o.quadraticCurveTo(500+hX, 500+hY, 360+hX, 390+hY);
+      o.quadraticCurveTo(340+hX, 200+hY, 500+hX, 170+hY);
+      o.fill();
+
+      // Visor glass
+      const visor = o.createLinearGradient(400+vX, 150+vY, 600+vX, 450+vY);
+      visor.addColorStop(0, 'rgb(50,55,60)');
+      visor.addColorStop(0.4, 'rgb(4,4,5)');
+      visor.addColorStop(0.8, 'rgb(0,0,0)');
+      visor.addColorStop(1, 'rgb(25,25,30)');
+      o.fillStyle = visor;
+      o.beginPath();
+      o.moveTo(500+vX, 185+vY);
+      o.quadraticCurveTo(640+vX, 210+vY, 620+vX, 375+vY);
+      o.quadraticCurveTo(500+vX, 470+vY, 380+vX, 375+vY);
+      o.quadraticCurveTo(360+vX, 210+vY, 500+vX, 185+vY);
+      o.fill();
+
+      // Eyes
+      const cX = 500+oX, eY = 320+oY;
+      const eyes = [cX - 65, cX + 65];
+      eyes.forEach(ex => {
+        o.fillStyle = 'rgba(0,0,0,0.9)';
+        o.beginPath(); o.arc(ex, eY, 55, 0, Math.PI*2); o.fill();
+
+        const casing = o.createLinearGradient(ex-45, eY-45, ex+45, eY+45);
+        casing.addColorStop(0, 'rgb(180,180,180)');
+        casing.addColorStop(0.5, 'rgb(20,20,20)');
+        casing.addColorStop(1, 'rgb(90,90,90)');
+        o.fillStyle = casing;
+        o.beginPath(); o.arc(ex, eY, 48, 0, Math.PI*2); o.fill();
+
+        const lens = o.createRadialGradient(ex-15, eY-15, 2, ex, eY, 45);
+        lens.addColorStop(0, 'rgb(45,45,50)');
+        lens.addColorStop(0.4, 'rgb(8,8,10)');
+        lens.addColorStop(1, 'rgb(0,0,0)');
+        o.fillStyle = lens;
+        o.beginPath(); o.arc(ex, eY, 40, 0, Math.PI*2); o.fill();
+
+        o.fillStyle = 'rgba(255,255,255,0.2)';
+        o.beginPath(); o.arc(ex-12, eY-12, 15, 0, Math.PI*2); o.fill();
+      });
+
+      const isBlink = frame % 250 > 240;
+      eyes.forEach(ex => {
+        if (isBlink) {
+          o.fillStyle = 'rgb(200,200,200)';
+          o.fillRect(ex - 35, eY - 2, 70, 4);
+          return;
+        }
+        const baseA = 0.3 + proximity * 0.5;
+        const coreA = baseA + Math.sin(frame * 0.05) * 0.2;
+        const ringS = 18 + proximity * 8;
+        const coreS = 9 + proximity * 5;
+        o.strokeStyle = `rgba(255,255,255,${baseA + 0.1})`;
+        o.lineWidth = 3 + proximity * 3;
+        o.beginPath(); o.arc(ex, eY, ringS, 0, Math.PI*2); o.stroke();
+        if (proximity > 0.5) {
+          o.strokeStyle = `rgba(255,255,255,${(proximity - 0.5) * 0.4})`;
+          o.lineWidth = 1;
+          o.beginPath(); o.arc(ex, eY, ringS + 10, 0, Math.PI*2); o.stroke();
+        }
+        o.fillStyle = `rgba(255,255,255,${coreA})`;
+        o.beginPath(); o.arc(ex, eY, coreS, 0, Math.PI*2); o.fill();
+      });
+
+      // Nose radar
+      o.fillStyle = 'rgb(10,10,10)';
+      o.beginPath(); o.arc(cX, eY + 55, 14, 0, Math.PI*2); o.fill();
+      o.fillStyle = 'rgb(150,150,150)';
+      o.beginPath(); o.arc(cX - 3, eY + 52, 4, 0, Math.PI*2); o.fill();
+
+      // Visor reflection
+      o.save();
+      o.beginPath();
+      o.moveTo(500+vX, 185+vY);
+      o.quadraticCurveTo(640+vX, 210+vY, 620+vX, 375+vY);
+      o.quadraticCurveTo(500+vX, 470+vY, 380+vX, 375+vY);
+      o.quadraticCurveTo(360+vX, 210+vY, 500+vX, 185+vY);
+      o.clip();
+      o.fillStyle = 'rgba(255,255,255,0.15)';
+      o.beginPath();
+      o.moveTo(300+refX, 100+refY);
+      o.lineTo(600+refX, 150+refY);
+      o.quadraticCurveTo(500+refX, 350+refY, 350+refX, 400+refY);
+      o.fill();
+      o.fillStyle = 'rgba(255,255,255,0.05)';
+      o.beginPath();
+      o.moveTo(700+refX, 150+refY);
+      o.lineTo(650+refX, 450+refY);
+      o.lineTo(750+refX, 400+refY);
+      o.fill();
+      o.restore();
+      o.restore();
+
+      // All remaining ops work in raw buffer pixels.
+      o.setTransform(1, 0, 0, 1, 0, 0);
+
+      // Bayer dither
+      const img = o.getImageData(0, 0, BW, BH);
+      const d = img.data;
+      for (let y = 0; y < BH; y++) {
+        for (let x = 0; x < BW; x++) {
+          const i = (y * BW + x) * 4;
+          const luma = d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114;
+          const thr = (bayer[y % 8][x % 8] / 64) * 255;
+          const bright = luma > thr;
+          d[i] = 255; d[i+1] = 255; d[i+2] = 255;
+          d[i+3] = bright ? 255 : 0;
+        }
+      }
+      o.putImageData(img, 0, 0);
+
+      // Glitch (on click, decays) — magic numbers were in 1000x800 space, scale them.
+      if (glitch > 0) {
+        const g = glitch;
+        const slices = Math.floor(g * 20);
+        for (let i = 0; i < slices; i++) {
+          const y = Math.floor(Math.random() * BH);
+          const h = Math.floor((Math.random() * 30 + 5) * sy);
+          const ofs = Math.floor((Math.random() - 0.5) * g * 150 * sx);
+          const sh = Math.min(h, BH - y);
+          if (sh > 0) {
+            const slice = o.getImageData(0, y, BW, sh);
+            o.putImageData(slice, ofs, y);
+          }
+        }
+        if (g > 0.6) {
+          for (let i = 0; i < Math.floor(g * 5); i++) {
+            const by = Math.floor(Math.random() * BH);
+            o.fillStyle = `rgba(255,255,255,${g * 0.5})`;
+            o.fillRect(0, by, BW, (Math.random() * 4 + 1) * sy);
+          }
+        }
+        if (g > 0.4) {
+          for (let i = 0; i < Math.floor(g * 6); i++) {
+            const bx = Math.floor(Math.random() * BW * 0.9);
+            const by = Math.floor(Math.random() * BH * 0.875);
+            const bw = Math.floor((Math.random() * 120 + 30) * sx);
+            const bh = Math.floor((Math.random() * 15 + 3) * sy);
+            const blk = o.getImageData(bx, by, Math.min(bw, BW - bx), Math.min(bh, BH - by));
+            const bd = blk.data;
+            for (let p = 0; p < bd.length; p += 4) {
+              bd[p] = 255 - bd[p];
+              bd[p+1] = 255 - bd[p+1];
+              bd[p+2] = 255 - bd[p+2];
+            }
+            o.putImageData(blk, bx + Math.floor((Math.random() - 0.5) * 20 * sx), by);
+          }
+        }
+        if (g > 0.7) {
+          const ty = Math.floor(Math.random() * BH * 0.75);
+          const th = Math.floor((Math.random() * 80 + 40) * sy);
+          const tslice = o.getImageData(0, ty, BW, Math.min(th, BH - ty));
+          o.putImageData(tslice, 0, ty + Math.floor((Math.random() * 60 - 30) * sy));
+        }
+        glitch = Math.max(0, g - 0.03);
+      }
+
+      // Proximity scan line
+      if (proximity > 0.3) {
+        const scanY = (frame * 3 * sy) % BH;
+        const sa = (proximity - 0.3) * 0.6;
+        o.fillStyle = `rgba(255,255,255,${sa})`;
+        o.fillRect(0, scanY, BW, 2 * sy);
+        o.fillStyle = `rgba(255,255,255,${sa * 0.3})`;
+        o.fillRect(0, scanY - 4 * sy, BW, 10 * sy);
+      }
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, BW, BH);
+      ctx.fillStyle = '#050505';
+      ctx.fillRect(0, 0, BW, BH);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(off, 0, 0);
+
+      if (!reduceMotion && visible) raf = requestAnimationFrame(render);
+    };
+    render();
+
+    const io = new IntersectionObserver((entries) => {
+      visible = entries[0].isIntersecting;
+      if (visible && !raf && !reduceMotion) raf = requestAnimationFrame(render);
+      if (!visible && raf) { cancelAnimationFrame(raf); raf = 0; }
+    });
+    io.observe(canvas);
+
+    document.addEventListener('astro:before-preparation', () => {
+      if (raf) cancelAnimationFrame(raf);
+      io.disconnect();
+      window.removeEventListener('mousemove', onMove);
+    }, { once: true });
+  });
+</script>

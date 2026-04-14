@@ -1,5 +1,5 @@
 ---
-title: The Hidden Variance Reduction in Diffusion Loss
+title: Hidden Variance Reduction in Diffusion Loss
 date: 2025-12-06
 topics: [diffusion, variance-reduction]
 ---
