@@ -6,13 +6,12 @@ import ArrowCard from "@components/ArrowCard.astro";
 import PixelRobot from "@components/PixelRobot.astro";
 import Terminal from "@components/Terminal.astro";
 import { extractOverview, readingTime } from "@lib/utils";
-import { HOME, SITE } from "@consts";
+import { HOME } from "@consts";
 
 const INTRO = "This blog serves as a collection of my personal study notes, toy experiments, and the 'aha!' moments I encounter along the way. Please reach out if you have questions, feedback, or just want to connect.";
 
 const blog = (await getCollection("blog"))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-  .slice(0,SITE.NUM_POSTS_ON_HOMEPAGE)
   .map(post => ({
     ...post,
     overview: extractOverview(post.body),

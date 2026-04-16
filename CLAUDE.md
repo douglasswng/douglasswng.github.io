@@ -11,6 +11,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 There is no test suite.
 
+## Writing conventions
+
+Default to American English for all prose, titles, slugs, and filenames (e.g. "behavior", not "behaviour").
+
 ## Architecture
 
 Astro 5 static site published to GitHub Pages at `https://douglasswng.github.io` (see `astro.config.mjs`). Uses the `@astrojs/mdx`, `sitemap`, and `tailwind` integrations. Tailwind + `@tailwindcss/typography` handle styling; `src/styles/` and `tailwind.config.mjs` hold config.

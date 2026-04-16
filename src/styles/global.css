@@ -57,6 +57,110 @@ article blockquote p:last-of-type::after {
   content: none;
 }
 
+article blockquote[data-callout] {
+  @apply not-italic my-4 p-4 rounded-lg border-l-4;
+  @apply bg-stone-200/50 dark:bg-stone-800/50;
+  @apply border-stone-400 dark:border-stone-600;
+}
+
+article blockquote[data-callout] .callout-title {
+  @apply flex items-center gap-2 font-semibold;
+  @apply text-stone-900 dark:text-stone-100;
+}
+
+article blockquote[data-callout] .callout-title-icon {
+  @apply flex items-center shrink-0;
+}
+
+article blockquote[data-callout] .callout-title-icon svg {
+  @apply w-4 h-4;
+}
+
+article blockquote[data-callout] .callout-title-text {
+  @apply font-sans;
+}
+
+article blockquote[data-callout] .callout-content {
+  @apply mt-2;
+}
+
+article blockquote[data-callout] .callout-content > :first-child {
+  margin-top: 0;
+}
+
+article blockquote[data-callout] .callout-content > :last-child {
+  margin-bottom: 0;
+}
+
+article blockquote[data-callout="note"] {
+  @apply border-sky-500 dark:border-sky-400;
+}
+
+article blockquote[data-callout="abstract"],
+article blockquote[data-callout="summary"],
+article blockquote[data-callout="tldr"] {
+  @apply border-teal-500 dark:border-teal-400;
+}
+
+article blockquote[data-callout="tip"],
+article blockquote[data-callout="hint"],
+article blockquote[data-callout="important"] {
+  @apply border-cyan-500 dark:border-cyan-400;
+}
+
+article blockquote[data-callout="success"],
+article blockquote[data-callout="check"],
+article blockquote[data-callout="done"] {
+  @apply border-emerald-500 dark:border-emerald-400;
+}
+
+article blockquote[data-callout="question"],
+article blockquote[data-callout="help"],
+article blockquote[data-callout="faq"] {
+  @apply border-amber-500 dark:border-amber-400;
+}
+
+article blockquote[data-callout="warning"],
+article blockquote[data-callout="caution"],
+article blockquote[data-callout="attention"] {
+  @apply border-orange-500 dark:border-orange-400;
+}
+
+article blockquote[data-callout="failure"],
+article blockquote[data-callout="fail"],
+article blockquote[data-callout="missing"],
+article blockquote[data-callout="danger"],
+article blockquote[data-callout="error"],
+article blockquote[data-callout="bug"] {
+  @apply border-red-500 dark:border-red-400;
+}
+
+article blockquote[data-callout="example"] {
+  @apply border-purple-500 dark:border-purple-400;
+}
+
+article blockquote[data-callout="quote"],
+article blockquote[data-callout="cite"] {
+  @apply border-stone-500 dark:border-stone-400;
+}
+
+article blockquote[data-expandable="true"] .callout-title {
+  @apply cursor-pointer select-none;
+}
+
+article blockquote[data-expandable="true"] .callout-title::after {
+  content: "▶";
+  @apply ml-auto text-xs transition-transform duration-200;
+}
+
+article blockquote[data-expandable="true"][data-expanded="true"] .callout-title::after {
+  transform: rotate(90deg);
+}
+
+article blockquote[data-expandable="true"][data-expanded="false"] .callout-title ~ * {
+  display: none;
+}
+
 mjx-container {
   font-size: 87.5% !important;
 }

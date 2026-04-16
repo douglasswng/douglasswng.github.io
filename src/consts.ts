@@ -3,7 +3,6 @@ import type { Site, Metadata, Socials } from "@types";
 export const SITE: Site = {
   NAME: "Doug's Blog",
   EMAIL: "douglasswng@gmail.com",
-  NUM_POSTS_ON_HOMEPAGE: 3
 };
 
 export const HOME: Metadata = {
