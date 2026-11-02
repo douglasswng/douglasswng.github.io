@@ -1,7 +1,7 @@
 ---
 title: Why Continuous Behavioral Cloning Fails Exponentially (and How Robotics Gets Away With It)
 date: 2026-04-16
-topics: [robotics, imitation-learning]
+topics: [imitation-learning, learning-theory]
 ---
 
 Behavioral cloning has a well-known failure mode: small errors compound, and the policy drifts into states the expert never visited. The standard analysis bounds this drift as quadratic in the horizon — bad, but manageable. That bound assumes discrete actions. When actions are continuous, Simchowitz et al. (2025) show the picture is fundamentally worse: error grows exponentially in the horizon. Yet methods like ACT and diffusion policy routinely solve long-horizon manipulation tasks. What are they actually doing to survive?
