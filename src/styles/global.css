@@ -158,7 +158,7 @@ article blockquote[data-expandable="true"][data-expanded="true"] .callout-title:
 }
 
 article blockquote[data-expandable="true"][data-expanded="false"] .callout-title ~ * {
-  display: none;
+  display: none !important;
 }
 
 mjx-container {
